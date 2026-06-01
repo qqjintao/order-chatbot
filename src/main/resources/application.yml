@@ -1,0 +1,61 @@
+spring:
+  application:
+    name: chatbot
+  ai:
+    dashscope:
+      api-key: 3cf4eb42-3301-4621-ae2b-58d1510cb057
+      chat:
+        options:
+          model: qwen3.6-flash-2026-04-16
+    mcp:
+      client:
+        enabled: true
+        toolcallback:
+          enabled: true
+        streamable-http:
+          connections:
+            jina:
+              # 官方地址：https://mcp.jina.ai 本地部署：http://127.0.0.1:8787
+              url: "https://mcp.jina.ai"
+              endpoint: "/sse"
+        request-timeout: 60000
+
+  # MySQL DataSource
+  datasource:
+    url: jdbc:mysql://localhost:3306/order_chatbot?useUnicode=true&characterEncoding=utf-8&serverTimezone=Asia/Shanghai&createDatabaseIfNotExist=true
+    username: root
+    password: root
+    driver-class-name: com.mysql.cj.jdbc.Driver
+    hikari:
+      minimum-idle: 5
+      maximum-pool-size: 20
+      idle-timeout: 300000
+      max-lifetime: 1200000
+      connection-timeout: 30000
+
+  # MyBatis-Plus
+mybatis-plus:
+  mapper-locations: classpath:mapper/*.xml
+  type-aliases-package: com.ai.examples.chatbot.dao.entity
+  configuration:
+    log-impl: org.apache.ibatis.logging.stdout.StdOutImpl
+    map-underscore-to-camel-case: true
+  global-config:
+    db-config:
+      id-type: auto
+
+server:
+  port: 8080
+
+# SpringDoc OpenAPI (Swagger)
+springdoc:
+  api-docs:
+    path: /v3/api-docs
+  swagger-ui:
+    path: /swagger-ui.html
+    tags-sorter: alpha
+    operations-sorter: alpha
+  group-configs:
+    - group: chatbot
+      paths-to-match: /api/**
+      packages-to-scan: com.ai.examples.chatbot.controller
