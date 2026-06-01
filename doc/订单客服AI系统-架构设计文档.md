@@ -2369,7 +2369,7 @@ curl http://localhost:8080/api/v1/knowledge/search?q=紫砂壶保养
 
 ---
 
-## 13. 附录
+## 14. 附录
 
 ### 13.1 常见问题排查
 
