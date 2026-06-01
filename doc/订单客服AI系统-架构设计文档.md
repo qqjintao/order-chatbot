@@ -338,6 +338,797 @@
 
 ---
 
+## 5. 前端架构设计
+
+### 5.1 前端技术选型
+
+| 类别 | 技术 | 版本 | 说明 |
+|------|------|------|------|
+| **框架** | Vue 3 | 3.4+ | 渐进式JavaScript框架，Composition API |
+| **构建工具** | Vite | 5.x | 新一代前端构建工具，秒级热更新 |
+| **语言** | TypeScript | 5.x | 类型安全，提升代码可维护性 |
+| **UI组件库** | Element Plus | 2.7+ | 饿了么出品，国内最流行的Vue3组件库 |
+| **状态管理** | Pinia | 2.x | Vue 3官方推荐，替代Vuex |
+| **路由** | Vue Router | 4.x | 官方路由管理器 |
+| **HTTP客户端** | Axios | 1.7+ | 请求拦截/响应拦截/取消请求 |
+| **CSS方案** | UnoCSS / Tailwind CSS | latest | 原子化CSS，按需生成 |
+| **图表** | ECharts | 5.x | 百度出品，国内最流行的可视化库 |
+| **图标** | @element-plus/icons-vue | latest | Element Plus配套图标库 |
+| **Markdown渲染** | markdown-it / vue3-markdown-it | latest | AI回复内容Markdown渲染 |
+| **工具库** | @vueuse/core / dayjs / lodash-es | latest | 组合式工具函数 |
+| **代码规范** | ESLint + Prettier | latest | 代码风格统一 |
+| **Git Hook** | husky + lint-staged | latest | 提交前自动检查 |
+
+### 5.2 前端项目结构
+
+```
+order-chatbot-web/
+├── .env.development              # 开发环境变量
+├── .env.production               # 生产环境变量
+├── .eslintrc.cjs                 # ESLint配置
+├── .prettierrc                   # Prettier配置
+├── index.html                    # HTML入口
+├── package.json
+├── tsconfig.json                 # TypeScript配置
+├── vite.config.ts                # Vite配置
+│
+├── public/                       # 静态资源(不经过构建)
+│   └── favicon.ico
+│
+├── mock/                         # Mock数据(开发阶段)
+│   ├── index.ts                  # Mock入口
+│   ├── chat.ts                   # 对话接口Mock
+│   ├── order.ts                  # 订单接口Mock
+│   ├── ticket.ts                 # 工单接口Mock
+│   └── knowledge.ts              # 知识库接口Mock
+│
+└── src/
+    ├── App.vue                   # 根组件
+    ├── main.ts                   # 应用入口
+    │
+    ├── api/                      # API接口层
+    │   ├── request.ts            # Axios实例(拦截器/基础配置)
+    │   ├── chat.ts               # 对话相关API
+    │   ├── session.ts            # 会话相关API
+    │   ├── order.ts              # 订单相关API
+    │   ├── ticket.ts             # 工单相关API
+    │   ├── knowledge.ts          # 知识库相关API
+    │   ├── dingtalk.ts           # 钉钉集成API
+    │   ├── analytics.ts          # 数据分析API
+    │   └── auth.ts               # 认证相关API
+    │
+    ├── assets/                   # 静态资源(经过构建)
+    │   ├── images/
+    │   └── styles/
+    │       ├── variables.scss    # SCSS变量
+    │       ├── reset.scss        # 样式重置
+    │       └── global.scss       # 全局样式
+    │
+    ├── components/               # 公共组件
+    │   ├── ChatBubble.vue        # 聊天气泡
+    │   ├── ChatInput.vue         # 聊天输入框
+    │   ├── ChatStreamRenderer.vue # 流式消息渲染
+    │   ├── MarkdownViewer.vue    # Markdown渲染器
+    │   ├── OrderCard.vue         # 订单卡片
+    │   ├── TicketCard.vue        # 工单卡片
+    │   ├── KnowledgeCard.vue     # 知识条目卡片
+    │   ├── SentimentBadge.vue    # 情感标签
+    │   ├── FileUploader.vue      # 文件上传组件
+    │   ├── DataTable.vue         # 通用数据表格
+    │   ├── StatCard.vue          # 统计卡片
+    │   ├── SearchBar.vue         # 搜索栏
+    │   └── AppLayout.vue         # 通用布局
+    │
+    ├── composables/              # 组合式函数(Hooks)
+    │   ├── useChat.ts            # 聊天逻辑
+    │   ├── useSSE.ts             # SSE流式接收
+    │   ├── usePagination.ts      # 分页逻辑
+    │   ├── usePolling.ts         # 轮询逻辑
+    │   └── usePermission.ts      # 权限判断
+    │
+    ├── layouts/                  # 布局组件
+    │   ├── AdminLayout.vue       # 管理后台布局(侧边栏+顶栏+内容)
+    │   ├── AgentLayout.vue       # 客服工作台布局(左右分栏)
+    │   └── BlankLayout.vue       # 空白布局(登录页)
+    │
+    ├── router/                   # 路由配置
+    │   ├── index.ts              # 路由入口
+    │   ├── admin.ts              # 管理后台路由
+    │   ├── agent.ts              # 客服工作台路由
+    │   └── guards.ts             # 路由守卫(鉴权)
+    │
+    ├── stores/                   # Pinia状态管理
+    │   ├── user.ts               # 用户信息/登录状态
+    │   ├── chat.ts               # 聊天状态(当前会话/消息列表)
+    │   ├── app.ts                # 全局应用状态(侧边栏/主题)
+    │   └── notification.ts       # 通知/消息提醒
+    │
+    ├── types/                    # TypeScript类型定义
+    │   ├── chat.ts               # 聊天消息类型
+    │   ├── session.ts            # 会话类型
+    │   ├── order.ts              # 订单类型
+    │   ├── ticket.ts             # 工单类型
+    │   ├── knowledge.ts          # 知识库类型
+    │   ├── api.ts                # 通用API响应类型
+    │   └── global.d.ts           # 全局类型声明
+    │
+    ├── utils/                    # 工具函数
+    │   ├── format.ts             # 格式化(时间/金额/手机号)
+    │   ├── storage.ts            # localStorage/sessionStorage封装
+    │   ├── validate.ts           # 表单校验规则
+    │   └── constants.ts          # 常量定义
+    │
+    └── views/                    # 页面视图
+        ├── login/
+        │   └── LoginView.vue     # 登录页
+        │
+        ├── admin/                # 管理后台页面
+        │   ├── DashboardView.vue # 首页仪表盘
+        │   ├── session/          # 会话管理
+        │   │   ├── SessionList.vue
+        │   │   └── SessionDetail.vue
+        │   ├── ticket/           # 工单管理
+        │   │   ├── TicketList.vue
+        │   │   └── TicketDetail.vue
+        │   ├── knowledge/        # 知识库管理
+        │   │   ├── KnowledgeList.vue
+        │   │   └── KnowledgeEdit.vue
+        │   ├── order/            # 订单管理
+        │   │   └── OrderList.vue
+        │   ├── analytics/        # 数据分析
+        │   │   ├── AnalyticsDashboard.vue
+        │   │   └── ReportView.vue
+        │   └── system/           # 系统设置
+        │       ├── ConfigView.vue
+        │       └── PromptManage.vue
+        │
+        └── agent/                # 客服工作台页面
+            ├── AgentWorkbench.vue # 客服工作台主页
+            └── AgentChat.vue     # 人工对话页面
+```
+
+### 5.3 路由设计
+
+```typescript
+// router/index.ts
+import { createRouter, createWebHistory } from 'vue-router'
+import type { RouteRecordRaw } from 'vue-router'
+
+const routes: RouteRecordRaw[] = [
+  // ============ 登录 ============
+  {
+    path: '/login',
+    name: 'Login',
+    component: () => import('@/views/login/LoginView.vue'),
+    meta: { title: '登录', requiresAuth: false }
+  },
+
+  // ============ 管理后台 ============
+  {
+    path: '/admin',
+    component: () => import('@/layouts/AdminLayout.vue'),
+    redirect: '/admin/dashboard',
+    meta: { title: '管理后台', requiresAuth: true, roles: ['admin', 'manager'] },
+    children: [
+      {
+        path: 'dashboard',
+        name: 'Dashboard',
+        component: () => import('@/views/admin/DashboardView.vue'),
+        meta: { title: '首页仪表盘', icon: 'Odometer' }
+      },
+      // --- 会话管理 ---
+      {
+        path: 'sessions',
+        name: 'SessionList',
+        component: () => import('@/views/admin/session/SessionList.vue'),
+        meta: { title: '会话列表', icon: 'ChatDotRound' }
+      },
+      {
+        path: 'sessions/:sessionId',
+        name: 'SessionDetail',
+        component: () => import('@/views/admin/session/SessionDetail.vue'),
+        meta: { title: '会话详情', hidden: true }
+      },
+      // --- 工单管理 ---
+      {
+        path: 'tickets',
+        name: 'TicketList',
+        component: () => import('@/views/admin/ticket/TicketList.vue'),
+        meta: { title: '工单管理', icon: 'Tickets' }
+      },
+      {
+        path: 'tickets/:ticketNo',
+        name: 'TicketDetail',
+        component: () => import('@/views/admin/ticket/TicketDetail.vue'),
+        meta: { title: '工单详情', hidden: true }
+      },
+      // --- 知识库管理 ---
+      {
+        path: 'knowledge',
+        name: 'KnowledgeList',
+        component: () => import('@/views/admin/knowledge/KnowledgeList.vue'),
+        meta: { title: '知识库', icon: 'Collection' }
+      },
+      {
+        path: 'knowledge/create',
+        name: 'KnowledgeCreate',
+        component: () => import('@/views/admin/knowledge/KnowledgeEdit.vue'),
+        meta: { title: '新增知识', hidden: true }
+      },
+      {
+        path: 'knowledge/:docId/edit',
+        name: 'KnowledgeEdit',
+        component: () => import('@/views/admin/knowledge/KnowledgeEdit.vue'),
+        meta: { title: '编辑知识', hidden: true }
+      },
+      // --- 订单管理 ---
+      {
+        path: 'orders',
+        name: 'OrderList',
+        component: () => import('@/views/admin/order/OrderList.vue'),
+        meta: { title: '订单管理', icon: 'Document' }
+      },
+      // --- 数据分析 ---
+      {
+        path: 'analytics',
+        name: 'AnalyticsDashboard',
+        component: () => import('@/views/admin/analytics/AnalyticsDashboard.vue'),
+        meta: { title: '数据分析', icon: 'DataAnalysis' }
+      },
+      {
+        path: 'analytics/report',
+        name: 'ReportView',
+        component: () => import('@/views/admin/analytics/ReportView.vue'),
+        meta: { title: '数据报表', hidden: true }
+      },
+      // --- 系统设置 ---
+      {
+        path: 'system/config',
+        name: 'SystemConfig',
+        component: () => import('@/views/admin/system/ConfigView.vue'),
+        meta: { title: '系统配置', icon: 'Setting' }
+      },
+      {
+        path: 'system/prompts',
+        name: 'PromptManage',
+        component: () => import('@/views/admin/system/PromptManage.vue'),
+        meta: { title: 'Prompt管理', icon: 'EditPen' }
+      }
+    ]
+  },
+
+  // ============ 客服工作台 ============
+  {
+    path: '/agent',
+    component: () => import('@/layouts/AgentLayout.vue'),
+    redirect: '/agent/workbench',
+    meta: { title: '客服工作台', requiresAuth: true, roles: ['agent', 'admin'] },
+    children: [
+      {
+        path: 'workbench',
+        name: 'AgentWorkbench',
+        component: () => import('@/views/agent/AgentWorkbench.vue'),
+        meta: { title: '工作台', icon: 'Monitor' }
+      },
+      {
+        path: 'chat/:sessionId',
+        name: 'AgentChat',
+        component: () => import('@/views/agent/AgentChat.vue'),
+        meta: { title: '人工对话', hidden: true }
+      }
+    ]
+  },
+
+  // ============ 默认重定向 ============
+  {
+    path: '/',
+    redirect: '/admin/dashboard'
+  },
+  {
+    path: '/:pathMatch(.*)*',
+    name: 'NotFound',
+    component: () => import('@/views/NotFound.vue'),
+    meta: { title: '404' }
+  }
+]
+```
+
+### 5.4 路由守卫设计
+
+```typescript
+// router/guards.ts
+import type { Router } from 'vue-router'
+import { useUserStore } from '@/stores/user'
+
+export function setupRouterGuards(router: Router) {
+  // 全局前置守卫：鉴权
+  router.beforeEach(async (to, _from, next) => {
+    const userStore = useUserStore()
+
+    // 设置页面标题
+    document.title = `${to.meta.title || '订单客服AI'} - 茶具电商`
+
+    // 不需要鉴权的页面直接放行
+    if (to.meta.requiresAuth === false) {
+      return next()
+    }
+
+    // 未登录 → 跳转登录页
+    if (!userStore.token) {
+      return next({ name: 'Login', query: { redirect: to.fullPath } })
+    }
+
+    // 已登录但无用户信息 → 拉取用户信息
+    if (!userStore.userInfo) {
+      try {
+        await userStore.fetchUserInfo()
+      } catch {
+        userStore.logout()
+        return next({ name: 'Login' })
+      }
+    }
+
+    // 角色权限校验
+    const requiredRoles = to.meta.roles as string[] | undefined
+    if (requiredRoles && !requiredRoles.includes(userStore.userInfo.role)) {
+      return next({ name: 'Dashboard' }) // 无权限 → 回首页
+    }
+
+    next()
+  })
+}
+```
+
+### 5.5 状态管理设计 (Pinia)
+
+#### 用户状态 (stores/user.ts)
+
+```typescript
+interface UserState {
+  token: string
+  refreshToken: string
+  userInfo: {
+    id: number
+    username: string
+    realName: string
+    role: 'admin' | 'manager' | 'agent'
+    avatar: string
+  } | null
+  permissions: string[]
+}
+
+// Actions:
+// - login(username, password) → 获取token + 用户信息
+// - logout() → 清除token + 重置状态
+// - fetchUserInfo() → 从后端获取最新用户信息
+// - refreshAccessToken() → 刷新token
+```
+
+#### 聊天状态 (stores/chat.ts)
+
+```typescript
+interface ChatState {
+  currentSessionId: string | null
+  sessions: Session[]           // 当前坐席的会话列表
+  activeMessages: Message[]     // 当前活跃会话的消息列表
+  streaming: boolean            // 是否正在流式接收
+  streamingContent: string      // 流式内容缓冲区
+  unreadCount: number           // 未读消息数
+}
+
+// Actions:
+// - createSession(platform) → 创建新会话
+// - sendMessage(sessionId, content) → 发送消息(SSE流式)
+// - loadHistory(sessionId, page) → 加载历史消息
+// - closeSession(sessionId) → 关闭会话
+// - transferToHuman(sessionId) → 转人工
+// - appendStreamContent(chunk) → 追加流式内容
+```
+
+#### 应用状态 (stores/app.ts)
+
+```typescript
+interface AppState {
+  sidebarCollapsed: boolean     // 侧边栏折叠
+  theme: 'light' | 'dark'       // 主题
+  language: 'zh-CN'             // 语言
+  polling: boolean              // 是否开启轮询(新消息提醒)
+}
+```
+
+### 5.6 Axios 封装 (api/request.ts)
+
+```typescript
+import axios, { type AxiosInstance, type InternalAxiosRequestConfig } from 'axios'
+import { ElMessage } from 'element-plus'
+import { useUserStore } from '@/stores/user'
+import type { ApiResponse } from '@/types/api'
+
+const request: AxiosInstance = axios.create({
+  baseURL: import.meta.env.VITE_API_BASE_URL || '/api/v1',
+  timeout: 60000,  // AI接口可能较慢，60s超时
+  headers: { 'Content-Type': 'application/json' }
+})
+
+// 请求拦截器：自动附加Token
+request.interceptors.request.use((config: InternalAxiosRequestConfig) => {
+  const userStore = useUserStore()
+  if (userStore.token) {
+    config.headers.Authorization = `Bearer ${userStore.token}`
+  }
+  return config
+})
+
+// 响应拦截器：统一错误处理
+request.interceptors.response.use(
+  (response) => {
+    const res = response.data as ApiResponse
+    if (res.code !== 200) {
+      ElMessage.error(res.message || '请求失败')
+      return Promise.reject(new Error(res.message))
+    }
+    return response
+  },
+  (error) => {
+    if (error.response?.status === 401) {
+      const userStore = useUserStore()
+      userStore.logout()
+      window.location.href = '/login'
+    }
+    ElMessage.error(error.message || '网络错误')
+    return Promise.reject(error)
+  }
+)
+
+export default request
+```
+
+### 5.7 SSE 流式接收封装 (composables/useSSE.ts)
+
+```typescript
+// 用于接收 /api/v1/chat/stream 的流式响应
+export function useSSE() {
+  const content = ref('')
+  const isStreaming = ref(false)
+  const error = ref<string | null>(null)
+  let abortController: AbortController | null = null
+
+  async function startStream(url: string, body: Record<string, unknown>) {
+    content.value = ''
+    isStreaming.value = true
+    error.value = null
+    abortController = new AbortController()
+
+    try {
+      const response = await fetch(url, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${useUserStore().token}`
+        },
+        body: JSON.stringify(body),
+        signal: abortController.signal
+      })
+
+      const reader = response.body!.getReader()
+      const decoder = new TextDecoder()
+
+      while (true) {
+        const { done, value } = await reader.read()
+        if (done) break
+
+        const chunk = decoder.decode(value, { stream: true })
+        // 解析 SSE 格式: "data: {...}\n\n"
+        const lines = chunk.split('\n')
+        for (const line of lines) {
+          if (line.startsWith('data: ')) {
+            const data = JSON.parse(line.slice(6))
+            if (data.type === 'content') {
+              content.value += data.content
+            } else if (data.type === 'error') {
+              error.value = data.message
+            } else if (data.type === 'done') {
+              // 流结束
+            }
+          }
+        }
+      }
+    } catch (e: any) {
+      if (e.name !== 'AbortError') {
+        error.value = e.message
+      }
+    } finally {
+      isStreaming.value = false
+    }
+  }
+
+  function stopStream() {
+    abortController?.abort()
+  }
+
+  onUnmounted(() => stopStream())
+
+  return { content, isStreaming, error, startStream, stopStream }
+}
+```
+
+### 5.8 前端页面清单
+
+#### 管理后台 (Admin)
+
+| 页面路由 | 页面名称 | 组件路径 | 功能描述 |
+|----------|----------|----------|----------|
+| `/admin/dashboard` | 首页仪表盘 | `views/admin/DashboardView.vue` | 实时统计卡片/会话趋势图/热点排行 |
+| `/admin/sessions` | 会话列表 | `views/admin/session/SessionList.vue` | 会话列表/搜索/筛选/批量操作 |
+| `/admin/sessions/:id` | 会话详情 | `views/admin/session/SessionDetail.vue` | 对话记录回放/消息详情/意图分析 |
+| `/admin/tickets` | 工单列表 | `views/admin/ticket/TicketList.vue` | 工单列表/状态筛选/分配/催办 |
+| `/admin/tickets/:no` | 工单详情 | `views/admin/ticket/TicketDetail.vue` | 工单流转/处理操作/关联会话 |
+| `/admin/knowledge` | 知识库列表 | `views/admin/knowledge/KnowledgeList.vue` | 文档列表/分类筛选/搜索/状态管理 |
+| `/admin/knowledge/create` | 新增知识 | `views/admin/knowledge/KnowledgeEdit.vue` | 手动录入/文件上传/钉钉同步触发 |
+| `/admin/knowledge/:id/edit` | 编辑知识 | `views/admin/knowledge/KnowledgeEdit.vue` | 内容编辑/重新切片/重建索引 |
+| `/admin/orders` | 订单管理 | `views/admin/order/OrderList.vue` | 订单查询/物流追踪/退换货操作 |
+| `/admin/analytics` | 数据分析 | `views/admin/analytics/AnalyticsDashboard.vue` | 趋势图表/热点分析/满意度统计 |
+| `/admin/analytics/report` | 数据报表 | `views/admin/analytics/ReportView.vue` | 周报/月报查看与导出 |
+| `/admin/system/config` | 系统配置 | `views/admin/system/ConfigView.vue` | 系统参数配置(JSON表单) |
+| `/admin/system/prompts` | Prompt管理 | `views/admin/system/PromptManage.vue` | Prompt模板CRUD/版本管理 |
+
+#### 客服工作台 (Agent)
+
+| 页面路由 | 页面名称 | 组件路径 | 功能描述 |
+|----------|----------|----------|----------|
+| `/agent/workbench` | 客服工作台 | `views/agent/AgentWorkbench.vue` | 左侧会话列表/右侧对话区/快捷回复 |
+| `/agent/chat/:id` | 人工对话 | `views/agent/AgentChat.vue` | 人工接管会话/AI辅助建议/工单创建 |
+
+### 5.9 核心页面组件树
+
+#### 客服工作台 (AgentWorkbench.vue) - 最核心页面
+
+```
+AgentWorkbench.vue
+├── AppLayout (左右分栏布局)
+│   ├── SessionSidebar (左侧：会话列表)
+│   │   ├── SearchBar (搜索框)
+│   │   ├── SessionTabs (待处理/进行中/已关闭 Tab切换)
+│   │   └── SessionItem[] (会话条目)
+│   │       ├── SessionAvatar (用户头像)
+│   │       ├── SessionInfo (用户名/平台/最后消息时间)
+│   │       ├── SentimentBadge (情感标签: 正面/中性/负面)
+│   │       └── UnreadBadge (未读计数)
+│   │
+│   └── ChatPanel (右侧：对话区域)
+│       ├── ChatHeader (顶部栏)
+│       │   ├── SessionTitle (会话标题)
+│       │   ├── TransferButton (转人工按钮)
+│       │   └── CloseButton (关闭会话)
+│       │
+│       ├── ChatMessageList (消息列表，虚拟滚动)
+│       │   └── ChatBubble[] (消息气泡)
+│       │       ├── ChatBubble.Avatar (头像: AI/用户)
+│       │       ├── ChatBubble.Content
+│       │       │   └── MarkdownViewer (AI回复Markdown渲染)
+│       │       │       ├── 文本/表格/列表
+│       │       │       ├── OrderCard (订单卡片内嵌)
+│       │       │       └── 快捷操作按钮
+│       │       ├── ChatBubble.References (引用的知识库条目)
+│       │       │   └── KnowledgeCard (知识条目卡片)
+│       │       ├── ChatBubble.Sentiment (情感分析结果)
+│       │       └── ChatBubble.Time (时间戳)
+│       │
+│       ├── ChatStreamRenderer (流式消息渲染)
+│       │   └── 打字机效果逐字显示
+│       │
+│       └── ChatInput (底部输入区)
+│           ├── QuickReplyBar (快捷回复按钮组)
+│           ├── InputTextarea (文本输入框)
+│           ├── FileUploader (附件上传)
+│           └── SendButton (发送按钮)
+```
+
+#### 管理后台仪表盘 (DashboardView.vue)
+
+```
+DashboardView.vue
+├── StatCardRow (统计卡片行)
+│   ├── StatCard (今日会话数)
+│   ├── StatCard (AI处理率)
+│   ├── StatCard (平均响应时长)
+│   ├── StatCard (待处理工单数)
+│   └── StatCard (满意度评分)
+│
+├── ChartRow (图表行)
+│   ├── ECharts (会话趋势折线图)
+│   └── ECharts (平台分布饼图)
+│
+├── HotTopicTable (热点问题排行)
+│   └── DataTable (排行表格)
+│
+└── RecentTickets (最近工单)
+    └── TicketCard[] (工单卡片列表)
+```
+
+### 5.10 前端构建与部署配置
+
+#### Vite 配置 (vite.config.ts)
+
+```typescript
+import { defineConfig } from 'vite'
+import vue from '@vitejs/plugin-vue'
+import AutoImport from 'unplugin-auto-import/vite'
+import Components from 'unplugin-vue-components/vite'
+import { ElementPlusResolver } from 'unplugin-vue-components/resolvers'
+import { resolve } from 'path'
+
+export default defineConfig({
+  plugins: [
+    vue(),
+    AutoImport({
+      resolvers: [ElementPlusResolver()],
+      imports: ['vue', 'vue-router', 'pinia', '@vueuse/core']
+    }),
+    Components({
+      resolvers: [ElementPlusResolver()]
+    })
+  ],
+  resolve: {
+    alias: {
+      '@': resolve(__dirname, 'src')
+    }
+  },
+  server: {
+    port: 5173,
+    proxy: {
+      '/api': {
+        target: 'http://localhost:8080',  // 后端服务地址
+        changeOrigin: true
+      }
+    }
+  },
+  build: {
+    outDir: 'dist',
+    // 分包策略: 将大型依赖单独打包
+    rollupOptions: {
+      output: {
+        manualChunks: {
+          vue: ['vue', 'vue-router', 'pinia'],
+          element: ['element-plus'],
+          echarts: ['echarts'],
+          vendor: ['axios', 'dayjs', 'lodash-es']
+        }
+      }
+    }
+  }
+})
+```
+
+#### 环境变量 (.env.development)
+
+```env
+VITE_API_BASE_URL=/api/v1
+VITE_APP_TITLE=订单客服AI系统(开发)
+VITE_SSE_BASE_URL=/api/v1
+```
+
+#### 环境变量 (.env.production)
+
+```env
+VITE_API_BASE_URL=/api/v1
+VITE_APP_TITLE=订单客服AI系统
+VITE_SSE_BASE_URL=/api/v1
+```
+
+#### 构建命令 (package.json scripts)
+
+```json
+{
+  "scripts": {
+    "dev": "vite",
+    "build": "vue-tsc && vite build",
+    "build:admin": "vite build --mode production",
+    "preview": "vite preview",
+    "lint": "eslint src --ext .ts,.vue --fix",
+    "format": "prettier --write src/"
+  }
+}
+```
+
+### 5.11 前后端联调规范
+
+#### 开发阶段联调方式
+
+| 阶段 | 联调方式 | 说明 |
+|------|----------|------|
+| 前端独立开发 | Mock (mockjs) | `/mock/` 目录下按模块编写Mock数据 |
+| 后端接口就绪 | Vite Proxy | `vite.config.ts` 中配置 `/api` 代理到后端 |
+| 联调测试 | 真实后端 | 修改 `.env.development` 中的 `VITE_API_BASE_URL` |
+
+#### Mock 数据示例 (mock/chat.ts)
+
+```typescript
+import { mock } from 'mockjs'
+
+export default [
+  // 发送消息
+  {
+    url: '/api/v1/chat/send',
+    method: 'post',
+    response: ({ body }: { body: { message: string } }) => {
+      return {
+        code: 200,
+        message: 'success',
+        data: {
+          messageId: mock('@guid'),
+          sessionId: 'mock-session-001',
+          content: `您好，关于"${body.message}"，这是AI自动回复的Mock数据。`,
+          intent: 'product_inquiry',
+          sentiment: 'neutral',
+          confidence: 0.92,
+          references: [],
+          suggestions: ['查看物流', '申请退款', '联系人工'],
+          needHumanTransfer: false
+        }
+      }
+    }
+  }
+]
+```
+
+#### 接口类型定义示例 (types/chat.ts)
+
+```typescript
+// 与后端DTO完全对齐
+export interface ChatRequest {
+  sessionId: string
+  platform: 'tmall' | 'jd' | 'douyin' | 'pdd'
+  message: string
+  messageType?: 'text' | 'image'
+}
+
+export interface ChatResponse {
+  messageId: string
+  sessionId: string
+  content: string
+  intent: string
+  sentiment: 'positive' | 'neutral' | 'negative'
+  confidence: number
+  references: KnowledgeReference[]
+  suggestions: string[]
+  needHumanTransfer: boolean
+}
+
+export interface KnowledgeReference {
+  docTitle: string
+  chunkContent: string
+  score: number
+}
+
+export interface Message {
+  messageId: string
+  sessionId: string
+  role: 'user' | 'assistant' | 'system'
+  content: string
+  intent?: string
+  sentiment?: string
+  confidence?: number
+  ragDocs?: KnowledgeReference[]
+  messageTime: string
+}
+
+export interface Session {
+  sessionId: string
+  platform: string
+  platformUserId: string
+  userName: string
+  status: 1 | 2 | 3  // 1进行中 2已结束 3已转人工
+  agentId?: number
+  startTime: string
+  endTime?: string
+  lastMessage?: string
+  unreadCount?: number
+}
+```
+
+---
+
 ## 6. 后端模块详细设计
 
 ### 5.1 模块总览
@@ -739,122 +1530,1732 @@ CREATE TABLE `prompt_template` (
 
 ## 8. API 接口设计（前端开发手册）
 
-### 7.1 接口规范
+> **本章目标读者**: 前端开发工程师  
+> **接口前缀**: `/api/v1`  
+> **Base URL (开发环境)**: `http://localhost:8080/api/v1`  
+> **Base URL (生产环境)**: `https://your-domain.com/api/v1`
 
-- **协议**: HTTPS
-- **格式**: JSON
-- **编码**: UTF-8
-- **版本**: `/api/v1/`
-- **鉴权**: Bearer Token (JWT) + API Key (外部调用)
+### 8.1 接口通用规范
 
-### 7.2 统一响应格式
+**协议与格式**:
+- 协议: HTTPS (生产) / HTTP (开发)
+- 数据格式: JSON
+- 编码: UTF-8
+- 鉴权方式: `Authorization: Bearer {token}` (登录接口除外)
+- 超时设置: 普通接口 30s，聊天接口 60s，流式接口 120s
 
+**统一响应格式**:
+
+```typescript
+// 类型定义 (types/api.ts)
+export interface ApiResponse<T = unknown> {
+  code: number          // 业务状态码: 200=成功
+  message: string       // 提示信息
+  data: T               // 响应数据(泛型)
+  timestamp: number     // 服务器时间戳
+  traceId: string       // 链路追踪ID，报错时提交给后端
+}
+
+export interface PageResponse<T> {
+  code: number
+  message: string
+  data: {
+    records: T[]        // 数据列表
+    total: number       // 总条数
+    page: number        // 当前页码
+    pageSize: number    // 每页条数
+    totalPages: number  // 总页数
+  }
+}
+```
+
+**业务状态码速查表**:
+
+| code | 含义 | 前端处理 |
+|------|------|----------|
+| 200 | 成功 | 正常展示数据 |
+| 400 | 参数错误 | `ElMessage.warning(res.message)` |
+| 401 | 未登录/token过期 | 跳转登录页 |
+| 403 | 无权限 | `ElMessage.error('无操作权限')` |
+| 404 | 资源不存在 | 展示空状态或跳转404页 |
+| 429 | 请求过于频繁 | `ElMessage.warning('操作太频繁，请稍后再试')` |
+| 500 | 服务器错误 | `ElMessage.error('服务器异常，请稍后重试')` |
+| 1001 | 会话已关闭 | 禁用输入框 |
+| 1002 | AI处理超时 | 展示"AI正在思考，请稍候..."并轮询重试 |
+| 1003 | 知识库未命中 | 展示"抱歉，我暂时无法回答这个问题"并建议转人工 |
+
+### 8.2 认证接口
+
+#### 8.2.1 登录
+
+```
+POST /api/v1/auth/login
+```
+
+**请求示例**:
+```json
+{
+  "username": "admin",
+  "password": "123456"
+}
+```
+
+**响应示例**:
 ```json
 {
   "code": 200,
   "message": "success",
-  "data": {},
-  "timestamp": 1717200000000,
-  "traceId": "trace-xxx-xxx"
+  "data": {
+    "token": "eyJhbGciOiJIUzI1NiIs...",
+    "refreshToken": "eyJhbGciOiJIUzI1NiIs...",
+    "expiresIn": 7200,
+    "userInfo": {
+      "id": 1,
+      "username": "admin",
+      "realName": "张三",
+      "role": "admin",
+      "avatar": "https://xxx.com/avatars/1.png"
+    }
+  }
 }
 ```
 
-### 7.3 核心接口清单
+**前端调用示例**:
+```typescript
+// api/auth.ts
+import request from './request'
 
-#### 7.3.1 会话与消息接口
+export function login(data: { username: string; password: string }) {
+  return request.post<ApiResponse<LoginResult>>('/auth/login', data)
+}
 
-```
-POST   /api/v1/sessions                    # 创建会话
-GET    /api/v1/sessions/{sessionId}        # 查询会话详情
-PUT    /api/v1/sessions/{sessionId}/close  # 关闭会话
-POST   /api/v1/sessions/{sessionId}/transfer # 转人工
-GET    /api/v1/sessions/{sessionId}/messages  # 历史消息
-
-POST   /api/v1/chat/send                   # 发送消息(核心接口)
-POST   /api/v1/chat/stream                 # 流式对话(SSE)
-```
-
-#### 7.3.2 订单查询接口
-
-```
-GET    /api/v1/orders/{orderNo}            # 根据订单号查询
-GET    /api/v1/orders/search               # 根据手机号/姓名查询
-GET    /api/v1/orders/{orderNo}/logistics  # 物流详情
-POST   /api/v1/orders/{orderNo}/refund    # 申请退款
+// 页面调用 (stores/user.ts)
+async function handleLogin(form: { username: string; password: string }) {
+  const res = await login(form)
+  this.token = res.data.token
+  this.userInfo = res.data.userInfo
+  localStorage.setItem('token', res.data.token)
+  router.push('/admin/dashboard')
+}
 ```
 
-#### 7.3.3 客诉工单接口
+#### 8.2.2 刷新Token
 
 ```
-POST   /api/v1/tickets                     # 创建工单
-GET    /api/v1/tickets/{ticketNo}          # 工单详情
-PUT    /api/v1/tickets/{ticketNo}/status   # 更新状态
-GET    /api/v1/tickets/pending             # 待处理列表
-POST   /api/v1/tickets/{ticketNo}/assign   # 分配处理人
+POST /api/v1/auth/refresh
 ```
 
-#### 7.3.4 知识库管理接口
-
-```
-POST   /api/v1/knowledge/upload            # 上传文档
-POST   /api/v1/knowledge/batch-import      # 批量导入
-POST   /api/v1/knowledge/sync-dingtalk     # 触发钉钉同步
-DELETE /api/v1/knowledge/{docId}           # 删除文档
-GET    /api/v1/knowledge/search            # 知识检索
-PUT    /api/v1/knowledge/{docId}/reindex   # 重建索引
-```
-
-#### 7.3.5 钉钉集成接口
-
-```
-GET    /api/v1/dingtalk/files              # 获取钉钉文件列表
-POST   /api/v1/dingtalk/sync              # 手动同步指定文件
-POST   /api/v1/dingtalk/webhook           # 钉钉机器人回调
-GET    /api/v1/dingtalk/spaces            # 获取知识库空间列表
-```
-
-#### 7.3.6 数据分析接口
-
-```
-GET    /api/v1/analytics/dashboard         # 实时看板
-GET    /api/v1/analytics/trend             # 趋势分析
-GET    /api/v1/analytics/hot-topics        # 热点问题
-POST   /api/v1/analytics/report/weekly     # 生成周报
-```
-
-### 7.4 核心接口示例
-
-**POST /api/v1/chat/send** (发送消息)
-
+**请求示例**:
 ```json
-// Request
 {
-  "sessionId": "sess-uuid-xxx",
+  "refreshToken": "eyJhbGciOiJIUzI1NiIs..."
+}
+```
+
+**响应示例**:
+```json
+{
+  "code": 200,
+  "data": {
+    "token": "eyJhbGciOiJIUzI1NiIs...(新token)",
+    "refreshToken": "eyJhbGciOiJIUzI1NiIs...(新refreshToken)",
+    "expiresIn": 7200
+  }
+}
+```
+
+**前端自动刷新Token逻辑 (request.ts 拦截器)**:
+```typescript
+// 在响应拦截器中处理401，自动刷新token
+let isRefreshing = false
+let refreshSubscribers: Array<(token: string) => void> = []
+
+request.interceptors.response.use(
+  (response) => {
+    // ...正常响应处理
+  },
+  async (error) => {
+    const originalRequest = error.config
+    if (error.response?.status === 401 && !originalRequest._retry) {
+      if (isRefreshing) {
+        return new Promise((resolve) => {
+          refreshSubscribers.push((token: string) => {
+            originalRequest.headers.Authorization = `Bearer ${token}`
+            resolve(request(originalRequest))
+          })
+        })
+      }
+      originalRequest._retry = true
+      isRefreshing = true
+      try {
+        const userStore = useUserStore()
+        const res = await refreshToken({ refreshToken: userStore.refreshToken })
+        userStore.token = res.data.token
+        userStore.refreshToken = res.data.refreshToken
+        refreshSubscribers.forEach(cb => cb(res.data.token))
+        refreshSubscribers = []
+        originalRequest.headers.Authorization = `Bearer ${res.data.token}`
+        return request(originalRequest)
+      } catch {
+        userStore.logout()
+        return Promise.reject(error)
+      } finally {
+        isRefreshing = false
+      }
+    }
+    return Promise.reject(error)
+  }
+)
+```
+
+#### 8.2.3 获取当前用户信息
+
+```
+GET /api/v1/auth/me
+```
+
+**响应示例**:
+```json
+{
+  "code": 200,
+  "data": {
+    "id": 1,
+    "username": "admin",
+    "realName": "张三",
+    "role": "admin",
+    "avatar": "https://xxx.com/avatars/1.png",
+    "permissions": ["session:view", "session:close", "ticket:*", "knowledge:*"]
+  }
+}
+```
+
+#### 8.2.4 登出
+
+```
+POST /api/v1/auth/logout
+```
+
+---
+
+### 8.3 会话接口
+
+#### 8.3.1 获取会话列表
+
+```
+GET /api/v1/sessions?page=1&pageSize=20&status=1&platform=&keyword=
+```
+
+| 参数 | 类型 | 必填 | 说明 |
+|------|------|------|------|
+| page | number | 否 | 页码，默认1 |
+| pageSize | number | 否 | 每页条数，默认20 |
+| status | number | 否 | 1=进行中, 2=已结束, 3=已转人工，不传=全部 |
+| platform | string | 否 | tmall/jd/douyin/pdd，不传=全部 |
+| keyword | string | 否 | 用户名/订单号模糊搜索 |
+
+**响应示例**:
+```json
+{
+  "code": 200,
+  "data": {
+    "records": [
+      {
+        "sessionId": "sess-a1b2c3",
+        "platform": "tmall",
+        "platformUserId": "tmall_user_123",
+        "userName": "茶友小王",
+        "status": 1,
+        "agentId": null,
+        "unreadCount": 2,
+        "sentiment": "neutral",
+        "lastMessage": "我的订单什么时候发货？",
+        "lastMessageTime": "2026-06-01 10:30:00",
+        "messageCount": 8,
+        "startTime": "2026-06-01 09:15:00"
+      }
+    ],
+    "total": 56,
+    "page": 1,
+    "pageSize": 20,
+    "totalPages": 3
+  }
+}
+```
+
+**前端调用**:
+```typescript
+// api/session.ts
+export function getSessionList(params: SessionQuery) {
+  return request.get<ApiResponse<PageResponse<Session>>>('/sessions', { params })
+}
+
+// 页面调用 (SessionList.vue)
+const sessions = ref<Session[]>([])
+const loading = ref(false)
+const pagination = reactive({ page: 1, pageSize: 20, total: 0 })
+
+async function fetchSessions() {
+  loading.value = true
+  const res = await getSessionList({
+    page: pagination.page,
+    pageSize: pagination.pageSize,
+    status: filterStatus.value
+  })
+  sessions.value = res.data.records
+  pagination.total = res.data.total
+  loading.value = false
+}
+```
+
+#### 8.3.2 获取会话详情
+
+```
+GET /api/v1/sessions/{sessionId}
+```
+
+**响应示例**:
+```json
+{
+  "code": 200,
+  "data": {
+    "sessionId": "sess-a1b2c3",
+    "platform": "tmall",
+    "platformUserId": "tmall_user_123",
+    "userName": "茶友小王",
+    "status": 1,
+    "agentId": null,
+    "sentiment": "neutral",
+    "sentimentHistory": [
+      { "time": "2026-06-01 09:15:00", "sentiment": "neutral" },
+      { "time": "2026-06-01 10:30:00", "sentiment": "negative" }
+    ],
+    "customerInfo": {
+      "phone": "138****5678",
+      "recentOrders": 3,
+      "totalOrders": 12,
+      "vipLevel": "金牌会员"
+    },
+    "startTime": "2026-06-01 09:15:00"
+  }
+}
+```
+
+#### 8.3.3 创建会话
+
+```
+POST /api/v1/sessions
+```
+
+**请求示例**:
+```json
+{
+  "platform": "tmall",
+  "platformUserId": "tmall_user_123",
+  "userName": "茶友小王"
+}
+```
+
+#### 8.3.4 关闭会话
+
+```
+PUT /api/v1/sessions/{sessionId}/close
+```
+
+**请求示例**:
+```json
+{
+  "closeReason": "问题已解决"
+}
+```
+
+**前端调用**:
+```typescript
+export function closeSession(sessionId: string, reason: string) {
+  return request.put(`/sessions/${sessionId}/close`, { closeReason: reason })
+}
+```
+
+#### 8.3.5 转人工
+
+```
+POST /api/v1/sessions/{sessionId}/transfer
+```
+
+**请求示例**:
+```json
+{
+  "agentId": 3,
+  "reason": "AI无法处理的客诉问题"
+}
+```
+
+**响应示例**:
+```json
+{
+  "code": 200,
+  "data": {
+    "sessionId": "sess-a1b2c3",
+    "status": 3,
+    "agentId": 3,
+    "agentName": "李四",
+    "transferTime": "2026-06-01 10:35:00"
+  }
+}
+```
+
+#### 8.3.6 获取会话消息历史
+
+```
+GET /api/v1/sessions/{sessionId}/messages?page=1&pageSize=50
+```
+
+**响应示例**:
+```json
+{
+  "code": 200,
+  "data": {
+    "records": [
+      {
+        "messageId": "msg-001",
+        "sessionId": "sess-a1b2c3",
+        "role": "user",
+        "content": "我的订单什么时候发货？",
+        "messageType": "text",
+        "messageTime": "2026-06-01 10:30:00"
+      },
+      {
+        "messageId": "msg-002",
+        "sessionId": "sess-a1b2c3",
+        "role": "assistant",
+        "content": "您好，您的订单（TB2026052812345）预计今天下午发货，请耐心等待...",
+        "messageType": "text",
+        "intent": "order_query",
+        "sentiment": null,
+        "confidence": 0.93,
+        "ragDocs": [
+          {
+            "docTitle": "发货时效说明",
+            "chunkContent": "常规订单48小时内发货...",
+            "score": 0.91
+          }
+        ],
+        "suggestions": ["修改地址", "查看物流", "联系人工"],
+        "messageTime": "2026-06-01 10:30:03"
+      }
+    ],
+    "total": 8,
+    "page": 1,
+    "pageSize": 50,
+    "totalPages": 1
+  }
+}
+```
+
+**前端专题: 消息列表渲染注意事项**
+```vue
+<!-- ChatMessageList.vue 核心逻辑 -->
+<template>
+  <div ref="scrollContainer" class="chat-message-list" @scroll="handleScroll">
+    <div v-for="msg in messages" :key="msg.messageId">
+      <ChatBubble
+        :role="msg.role"
+        :content="msg.content"
+        :time="msg.messageTime"
+        :intent="msg.intent"
+        :rag-docs="msg.ragDocs"
+        :suggestions="msg.suggestions"
+      />
+    </div>
+    <!-- 流式消息：AI正在输入 -->
+    <ChatBubble
+      v-if="streaming"
+      role="assistant"
+      :content="streamingContent"
+      :typing="true"
+    />
+    <div ref="scrollAnchor" />
+  </div>
+</template>
+
+<script setup lang="ts">
+const messages = ref<Message[]>([])
+const page = ref(1)
+const hasMore = ref(true)
+const loading = ref(false)
+
+// 加载历史消息（上拉加载更多）
+async function loadMore() {
+  if (loading.value || !hasMore.value) return
+  loading.value = true
+  const res = await getSessionMessages(sessionId.value, { page: page.value + 1, pageSize: 50 })
+  messages.value = [...res.data.records.reverse(), ...messages.value]
+  page.value = res.data.page
+  hasMore.value = page.value < res.data.totalPages
+  loading.value = false
+}
+
+// 新消息到达自动滚动到底部
+watch(
+  () => messages.value.length,
+  () => nextTick(() => scrollAnchor.value?.scrollIntoView({ behavior: 'smooth' }))
+)
+</script>
+```
+
+---
+
+### 8.4 聊天/对话接口 (最核心)
+
+#### 8.4.1 发送消息（普通模式）
+
+```
+POST /api/v1/chat/send
+```
+
+**请求示例**:
+```json
+{
+  "sessionId": "sess-a1b2c3",
   "platform": "tmall",
   "message": "我前天买的紫砂壶什么时候能到？",
   "messageType": "text"
 }
+```
 
-// Response
+**响应示例**:
+```json
 {
   "code": 200,
   "data": {
-    "messageId": "msg-uuid-xxx",
-    "sessionId": "sess-uuid-xxx",
-    "content": "您好，您的紫砂壶订单（订单号：TB2026052812345）已于5月29日发货，目前快递已到达【杭州市分拣中心】，预计明天下午前送达。您可以通过以下链接查看详细物流信息：https://...",
+    "messageId": "msg-uuid-003",
+    "sessionId": "sess-a1b2c3",
+    "content": "您好，您的紫砂壶订单（TB2026052812345）已于5月29日发货，目前快递已到达杭州市分拣中心，预计明天下午前送达。",
     "intent": "order_query",
     "sentiment": "neutral",
     "confidence": 0.95,
-    "references": [
+    "ragDocs": [
       {
         "docTitle": "物流查询FAQ",
-        "chunkContent": "...",
+        "chunkContent": "发货后省内1-2天送达，省外2-4天...",
         "score": 0.89
       }
     ],
     "suggestions": ["我要退货", "修改收货地址", "联系人工客服"],
-    "needHumanTransfer": false
+    "needHumanTransfer": false,
+    "tokensUsed": 1250,
+    "responseTime": 2.3
   }
+}
+```
+
+**前端调用**:
+```typescript
+// api/chat.ts
+export function sendMessage(data: ChatRequest) {
+  return request.post<ApiResponse<ChatResponse>>('/chat/send', data)
+}
+
+// 页面调用
+async function handleSend(text: string) {
+  const userMsg: Message = {
+    messageId: generateId(),
+    sessionId: currentSession.value,
+    role: 'user',
+    content: text,
+    messageType: 'text',
+    messageTime: new Date().toISOString()
+  }
+  messages.value.push(userMsg)
+
+  try {
+    const res = await sendMessage({
+      sessionId: currentSession.value,
+      platform: 'tmall',
+      message: text,
+      messageType: 'text'
+    })
+
+    const aiMsg: Message = {
+      messageId: res.data.messageId,
+      sessionId: res.data.sessionId,
+      role: 'assistant',
+      content: res.data.content,
+      intent: res.data.intent,
+      sentiment: res.data.sentiment,
+      confidence: res.data.confidence,
+      ragDocs: res.data.ragDocs,
+      suggestions: res.data.suggestions,
+      messageTime: new Date().toISOString()
+    }
+    messages.value.push(aiMsg)
+
+    // 如果需要转人工
+    if (res.data.needHumanTransfer) {
+      ElMessage.warning('AI暂时无法处理，正在为您转接人工...')
+      await transferToHuman(res.data.sessionId)
+    }
+  } catch (error) {
+    ElMessage.error('发送失败，请重试')
+    messages.value.pop() // 移除刚才添加的用户消息
+  }
+}
+```
+
+#### 8.4.2 流式对话（SSE模式，推荐用于前端）
+
+```
+POST /api/v1/chat/stream
+Content-Type: application/json
+Accept: text/event-stream
+```
+
+**请求示例** (同 8.4.1):
+```json
+{
+  "sessionId": "sess-a1b2c3",
+  "platform": "tmall",
+  "message": "给我推荐几款入门级的紫砂壶",
+  "messageType": "text"
+}
+```
+
+**SSE 事件流格式**:
+```
+data: {"type":"start","requestId":"req-001","intent":"product_recommend","timestamp":1717200000000}
+
+data: {"type":"content","content":"您好"}
+
+data: {"type":"content","content":"！推荐您"}
+
+data: {"type":"content","content":"以下几款入门级紫砂壶："}
+
+data: {"type":"rag_docs","docs":[{"docTitle":"新手选壶指南","chunkContent":"...","score":0.92}]}
+
+data: {"type":"suggestions","suggestions":["200-500元价位","如何辨别真伪","养护技巧"]}
+
+data: {"type":"done","tokensUsed":856,"responseTime":3.1}
+```
+
+**SSE 事件类型说明**:
+
+| eventType | 说明 | data字段 | 前端处理 |
+|-----------|------|----------|----------|
+| `start` | 流开始 | requestId, intent, timestamp | 显示"AI正在输入..." |
+| `content` | 文本片段 | content (增量文本) | 追加到流式缓冲区 |
+| `rag_docs` | 检索到的知识 | docs[] | AI回复完成后展示"参考来源" |
+| `suggestions` | 推荐追问 | suggestions[] | 渲染快捷提问按钮 |
+| `done` | 流结束 | tokensUsed, responseTime | 停止loading动画 |
+| `error` | 异常中断 | message, code | 展示错误信息并重试按钮 |
+
+**前端流式接收实现**:
+```typescript
+// composables/useChat.ts
+export function useChat() {
+  const streamingContent = ref('')
+  const isStreaming = ref(false)
+  const intent = ref('')
+  const ragDocs = ref<RagDoc[]>([])
+  const suggestions = ref<string[]>([])
+  let abortController: AbortController | null = null
+
+  async function sendStreamMessage(sessionId: string, text: string) {
+    streamingContent.value = ''
+    isStreaming.value = true
+    ragDocs.value = []
+    suggestions.value = []
+    abortController = new AbortController()
+
+    try {
+      const response = await fetch(`${BASE_URL}/chat/stream`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${useUserStore().token}`
+        },
+        body: JSON.stringify({ sessionId, platform: 'tmall', message: text }),
+        signal: abortController.signal
+      })
+
+      if (!response.ok) throw new Error(`HTTP ${response.status}`)
+
+      const reader = response.body!.getReader()
+      const decoder = new TextDecoder()
+      let buffer = ''
+
+      while (true) {
+        const { done, value } = await reader.read()
+        if (done) break
+        buffer += decoder.decode(value, { stream: true })
+        const lines = buffer.split('\n')
+        buffer = lines.pop() || ''
+        for (const line of lines) {
+          if (line.startsWith('data: ')) {
+            const event = JSON.parse(line.slice(6))
+            switch (event.type) {
+              case 'content':
+                streamingContent.value += event.content
+                break
+              case 'rag_docs':
+                ragDocs.value = event.docs
+                break
+              case 'suggestions':
+                suggestions.value = event.suggestions
+                break
+              case 'error':
+                ElMessage.error(event.message)
+                break
+            }
+          }
+        }
+      }
+    } catch (e: any) {
+      if (e.name !== 'AbortError') {
+        ElMessage.error('连接中断，请重试')
+      }
+    } finally {
+      isStreaming.value = false
+    }
+  }
+
+  function stopStream() {
+    abortController?.abort()
+  }
+
+  onUnmounted(() => stopStream())
+
+  return { streamingContent, isStreaming, intent, ragDocs, suggestions, sendStreamMessage, stopStream }
+}
+```
+
+**前端流式消息展示组件 (ChatStreamRenderer.vue)**:
+```vue
+<template>
+  <div class="stream-renderer">
+    <!-- Markdown流式渲染 -->
+    <div class="markdown-content" v-html="renderMarkdown(streamingContent)" />
+    <!-- 打字光标动画 -->
+    <span v-if="isStreaming" class="typing-cursor">|</span>
+    <!-- 参考来源 -->
+    <div v-if="!isStreaming && ragDocs.length" class="references">
+      <div class="ref-title">参考来源:</div>
+      <div v-for="doc in ragDocs" :key="doc.docTitle" class="ref-item">
+        <el-tag size="small">{{ doc.docTitle }}</el-tag>
+        <span class="ref-score">相关度: {{ (doc.score * 100).toFixed(0) }}%</span>
+      </div>
+    </div>
+    <!-- 快捷追问 -->
+    <div v-if="!isStreaming && suggestions.length" class="quick-suggestions">
+      <el-button
+        v-for="q in suggestions" :key="q"
+        size="small"
+        @click="$emit('quickAsk', q)"
+      >{{ q }}</el-button>
+    </div>
+  </div>
+</template>
+
+<style scoped>
+.typing-cursor {
+  animation: blink 1s infinite;
+}
+@keyframes blink {
+  0%, 50% { opacity: 1; }
+  51%, 100% { opacity: 0; }
+}
+</style>
+```
+
+#### 8.4.3 评价消息
+
+```
+POST /api/v1/chat/{messageId}/feedback
+```
+
+**请求示例**:
+```json
+{
+  "rating": 1,
+  "comment": "回答很准确"
+}
+```
+
+| 参数 | 类型 | 说明 |
+|------|------|------|
+| rating | number | 1=满意(赞), 0=不满意(踩) |
+| comment | string | 可选，评价备注 |
+
+#### 8.4.4 获取快捷回复列表
+
+```
+GET /api/v1/chat/quick-replies?platform=tmall
+```
+
+**响应示例**:
+```json
+{
+  "code": 200,
+  "data": [
+    { "id": 1, "label": "查询物流", "text": "帮我查一下物流信息" },
+    { "id": 2, "label": "退换货", "text": "我想申请退货" },
+    { "id": 3, "label": "产品咨询", "text": "这款茶具有什么特点？" }
+  ]
+}
+```
+
+---
+
+### 8.5 订单接口
+
+#### 8.5.1 根据订单号查询
+
+```
+GET /api/v1/orders/{orderNo}
+```
+
+**响应示例**:
+```json
+{
+  "code": 200,
+  "data": {
+    "orderNo": "TB2026052812345",
+    "orderStatus": "shipped",
+    "orderStatusText": "已发货",
+    "productName": "宜兴原矿紫砂壶-西施壶 200ml",
+    "productImage": "https://img.xxx.com/product/1.jpg",
+    "quantity": 1,
+    "amount": 399.00,
+    "payTime": "2026-05-28 14:30:00",
+    "shipTime": "2026-05-29 16:00:00",
+    "receiverName": "王**",
+    "receiverPhone": "138****5678",
+    "receiverAddress": "浙江省杭州市西湖区***",
+    "logistics": {
+      "company": "顺丰速运",
+      "trackNo": "SF1234567890",
+      "status": "运输中",
+      "statusCode": "transit",
+      "lastUpdate": "2026-06-01 08:00:00",
+      "tracks": [
+        { "time": "2026-06-01 08:00:00", "desc": "快件到达【杭州市分拣中心】" },
+        { "time": "2026-05-29 16:00:00", "desc": "【宜兴市】已揽件" }
+      ]
+    },
+    "canRefund": true,
+    "canCancel": false
+  }
+}
+```
+
+**前端渲染: 聊天内嵌订单卡片**:
+```vue
+<!-- components/OrderCard.vue -->
+<template>
+  <el-card class="order-card">
+    <div class="order-header">
+      <span>订单号: {{ order.orderNo }}</span>
+      <el-tag :type="statusTagType">{{ order.orderStatusText }}</el-tag>
+    </div>
+    <div class="order-product">
+      <el-image :src="order.productImage" style="width:60px;height:60px" />
+      <div>
+        <div>{{ order.productName }}</div>
+        <div class="price">¥{{ order.amount }}</div>
+      </div>
+    </div>
+    <div class="order-actions">
+      <el-button v-if="order.canRefund" type="warning" size="small" @click="$emit('refund')">
+        申请退款
+      </el-button>
+      <el-button size="small" @click="$emit('viewLogistics')">
+        查看物流
+      </el-button>
+    </div>
+  </el-card>
+</template>
+```
+
+#### 8.5.2 根据手机号/姓名查询订单列表
+
+```
+GET /api/v1/orders/search?phone=13812345678&name=王&page=1&pageSize=10
+```
+
+#### 8.5.3 获取物流详情
+
+```
+GET /api/v1/orders/{orderNo}/logistics
+```
+
+**响应示例**:
+```json
+{
+  "code": 200,
+  "data": {
+    "company": "顺丰速运",
+    "trackNo": "SF1234567890",
+    "status": "运输中",
+    "estimatedDelivery": "2026-06-02",
+    "tracks": [
+      { "time": "2026-06-01 08:00:00", "desc": "快件到达【杭州市分拣中心】", "status": "normal" },
+      { "time": "2026-05-30 22:00:00", "desc": "快件离开【宜兴转运中心】", "status": "normal" },
+      { "time": "2026-05-29 16:00:00", "desc": "【宜兴市】已揽件", "status": "normal" }
+    ]
+  }
+}
+```
+
+**前端物流轨迹时间线渲染 (Element Plus Timeline)**:
+```vue
+<el-timeline>
+  <el-timeline-item
+    v-for="track in logistics.tracks"
+    :key="track.time"
+    :timestamp="track.time"
+    :color="track.status === 'abnormal' ? '#F56C6C' : '#409EFF'"
+  >
+    {{ track.desc }}
+  </el-timeline-item>
+</el-timeline>
+```
+
+#### 8.5.4 申请退款
+
+```
+POST /api/v1/orders/{orderNo}/refund
+```
+
+**请求示例**:
+```json
+{
+  "refundReason": "商品与描述不符",
+  "refundType": "refund_and_return",
+  "description": "收到的紫砂壶颜色与图片差异较大",
+  "images": ["https://img.xxx.com/refund/1.jpg"]
+}
+```
+
+| 参数 | 类型 | 必填 | 说明 |
+|------|------|------|------|
+| refundReason | string | 是 | 退款原因 |
+| refundType | string | 是 | refund_only=仅退款, refund_and_return=退货退款 |
+| description | string | 否 | 详细描述 |
+| images | string[] | 否 | 凭证图片URL列表 |
+
+---
+
+### 8.6 客诉工单接口
+
+#### 8.6.1 获取工单列表
+
+```
+GET /api/v1/tickets?page=1&pageSize=20&status=&priority=&type=&keyword=
+```
+
+| 参数 | 类型 | 说明 |
+|------|------|------|
+| status | string | pending=待处理, processing=处理中, resolved=已解决, closed=已关闭 |
+| priority | string | P0/P1/P2/P3 |
+| type | string | quality=质量, logistics=物流, service=服务, refund=退款, other=其他 |
+| keyword | string | 工单号/用户昵称模糊搜索 |
+
+**响应示例**:
+```json
+{
+  "code": 200,
+  "data": {
+    "records": [
+      {
+        "ticketNo": "TK202606010001",
+        "title": "紫砂壶壶盖破损",
+        "type": "quality",
+        "typeText": "质量问题",
+        "priority": "P1",
+        "status": "pending",
+        "statusText": "待处理",
+        "sessionId": "sess-a1b2c3",
+        "userName": "茶友小王",
+        "assigneeName": null,
+        "description": "收到的紫砂壶壶盖边缘有裂纹",
+        "createTime": "2026-06-01 11:00:00",
+        "deadline": "2026-06-02 11:00:00"
+      }
+    ],
+    "total": 12,
+    "page": 1,
+    "pageSize": 20,
+    "totalPages": 1
+  }
+}
+```
+
+#### 8.6.2 创建工单
+
+```
+POST /api/v1/tickets
+```
+
+**请求示例**:
+```json
+{
+  "sessionId": "sess-a1b2c3",
+  "type": "quality",
+  "title": "紫砂壶壶盖破损",
+  "description": "客户反馈收到的紫砂壶壶盖边缘有明显裂纹",
+  "priority": "P1",
+  "orderNo": "TB2026052812345",
+  "images": ["https://img.xxx.com/ticket/1.jpg"]
+}
+```
+
+**响应示例**:
+```json
+{
+  "code": 200,
+  "data": {
+    "ticketNo": "TK202606010001",
+    "status": "pending",
+    "createTime": "2026-06-01 11:00:00",
+    "deadline": "2026-06-02 11:00:00"
+  }
+}
+```
+
+#### 8.6.3 获取工单详情
+
+```
+GET /api/v1/tickets/{ticketNo}
+```
+
+**响应示例**:
+```json
+{
+  "code": 200,
+  "data": {
+    "ticketNo": "TK202606010001",
+    "title": "紫砂壶壶盖破损",
+    "type": "quality",
+    "typeText": "质量问题",
+    "priority": "P1",
+    "status": "pending",
+    "statusText": "待处理",
+    "sessionId": "sess-a1b2c3",
+    "userName": "茶友小王",
+    "description": "客户反馈收到的紫砂壶壶盖边缘有明显裂纹",
+    "orderNo": "TB2026052812345",
+    "images": ["https://img.xxx.com/ticket/1.jpg"],
+    "assigneeId": null,
+    "assigneeName": null,
+    "resolution": null,
+    "resolutionTime": null,
+    "createTime": "2026-06-01 11:00:00",
+    "deadline": "2026-06-02 11:00:00",
+    "timeline": [
+      { "time": "2026-06-01 11:00:00", "action": "创建", "operator": "系统(AI)" },
+      { "time": "2026-06-01 11:00:01", "action": "自动分类为: 质量问题", "operator": "系统(AI)" }
+    ]
+  }
+}
+```
+
+#### 8.6.4 更新工单状态
+
+```
+PUT /api/v1/tickets/{ticketNo}/status
+```
+
+**请求示例**:
+```json
+{
+  "status": "processing",
+  "operatorNote": "已联系客户确认破损情况，安排补发"
+}
+```
+
+#### 8.6.5 分配处理人
+
+```
+POST /api/v1/tickets/{ticketNo}/assign
+```
+
+**请求示例**:
+```json
+{
+  "assigneeId": 5
+}
+```
+
+#### 8.6.6 解决工单
+
+```
+POST /api/v1/tickets/{ticketNo}/resolve
+```
+
+**请求示例**:
+```json
+{
+  "resolution": "已与客户沟通，安排补发新壶，客户接受",
+  "resolutionType": "compensation"
+}
+```
+
+#### 8.6.7 获取可分配的处理人列表
+
+```
+GET /api/v1/users?role=agent&status=active
+```
+
+**响应示例**:
+```json
+{
+  "code": 200,
+  "data": [
+    { "id": 3, "realName": "李四", "online": true, "currentTickets": 2 },
+    { "id": 5, "realName": "王五", "online": true, "currentTickets": 5 }
+  ]
+}
+```
+
+---
+
+### 8.7 知识库接口
+
+#### 8.7.1 获取知识库文档列表
+
+```
+GET /api/v1/knowledge?page=1&pageSize=20&category=&status=&keyword=&source=
+```
+
+| 参数 | 类型 | 说明 |
+|------|------|------|
+| category | string | product=产品, policy=政策, faq=FAQ, process=流程 |
+| status | string | active=已发布, draft=草稿, archived=已归档 |
+| source | string | manual=手动录入, dingtalk=钉钉同步, upload=文件上传 |
+| keyword | string | 标题/内容模糊搜索 |
+
+**响应示例**:
+```json
+{
+  "code": 200,
+  "data": {
+    "records": [
+      {
+        "docId": "doc-001",
+        "title": "紫砂壶保养指南",
+        "category": "product",
+        "categoryText": "产品知识",
+        "source": "dingtalk",
+        "status": "active",
+        "chunkCount": 12,
+        "fileSize": "245KB",
+        "fileType": "docx",
+        "syncTime": "2026-05-30 08:00:00",
+        "createTime": "2026-05-25 10:00:00",
+        "updateTime": "2026-05-30 08:00:00"
+      }
+    ],
+    "total": 35,
+    "page": 1,
+    "pageSize": 20,
+    "totalPages": 2
+  }
+}
+```
+
+#### 8.7.2 上传文档
+
+```
+POST /api/v1/knowledge/upload
+Content-Type: multipart/form-data
+```
+
+| 参数 | 类型 | 说明 |
+|------|------|------|
+| file | File | PDF/Word/Excel/图片/TXT |
+| category | string | 文档分类 |
+| title | string | 文档标题(可选，默认取文件名) |
+
+**前端上传组件实现**:
+```vue
+<!-- components/FileUploader.vue -->
+<template>
+  <el-upload
+    ref="uploadRef"
+    action="/api/v1/knowledge/upload"
+    :headers="{ Authorization: `Bearer ${userStore.token}` }"
+    :data="{ category: selectedCategory }"
+    :accept="'.pdf,.doc,.docx,.xls,.xlsx,.jpg,.png,.txt'"
+    :before-upload="handleBeforeUpload"
+    :on-success="handleSuccess"
+    :on-error="handleError"
+    :on-progress="handleProgress"
+    multiple
+    drag
+  >
+    <el-icon><UploadFilled /></el-icon>
+    <div>将文件拖到此处，或<em>点击上传</em></div>
+    <template #tip>
+      <div>支持 PDF / Word / Excel / 图片 / TXT，单文件不超过 20MB</div>
+    </template>
+  </el-upload>
+</template>
+
+<script setup lang="ts">
+const handleBeforeUpload = (file: File) => {
+  const maxSize = 20 * 1024 * 1024 // 20MB
+  if (file.size > maxSize) {
+    ElMessage.error('文件不能超过20MB')
+    return false
+  }
+  return true
+}
+
+const handleProgress = (event: { percent: number }) => {
+  // 显示上传进度: `正在上传 ${event.percent.toFixed(0)}%`
+}
+
+const handleSuccess = (res: ApiResponse<DocUploadResult>) => {
+  if (res.code === 200) {
+    ElMessage.success(`上传成功，文档已拆分为 ${res.data.chunkCount} 个片段`)
+  }
+}
+</script>
+```
+
+#### 8.7.3 删除文档
+
+```
+DELETE /api/v1/knowledge/{docId}
+```
+
+**前端调用: 二次确认弹窗**:
+```typescript
+async function deleteDocument(docId: string) {
+  await ElMessageBox.confirm('删除后将同时清除向量索引，确定删除？', '确认删除', {
+    type: 'warning',
+    confirmButtonText: '确定删除',
+    cancelButtonText: '取消'
+  })
+  await deleteDoc(docId)
+  ElMessage.success('删除成功')
+  fetchList()
+}
+```
+
+#### 8.7.4 重建文档索引
+
+```
+PUT /api/v1/knowledge/{docId}/reindex
+```
+
+**响应示例**:
+```json
+{
+  "code": 200,
+  "data": {
+    "docId": "doc-001",
+    "status": "indexing",
+    "chunkCount": 0,
+    "message": "索引重建任务已提交，预计1-3分钟完成"
+  }
+}
+```
+
+#### 8.7.5 获取重建索引进度
+
+```
+GET /api/v1/knowledge/{docId}/reindex/progress
+```
+
+**响应示例**:
+```json
+{
+  "code": 200,
+  "data": {
+    "status": "indexing",
+    "totalChunks": 12,
+    "completedChunks": 8,
+    "progress": 67
+  }
+}
+```
+
+**前端轮询进度**:
+```typescript
+// composables/usePolling.ts
+export function usePolling(fetchFn: () => Promise<any>, interval = 2000) {
+  const isPolling = ref(false)
+  let timer: ReturnType<typeof setInterval> | null = null
+
+  function start() {
+    if (isPolling.value) return
+    isPolling.value = true
+    timer = setInterval(async () => {
+      const result = await fetchFn()
+      if (result.conditionMet) stop()
+    }, interval)
+  }
+
+  function stop() {
+    if (timer) { clearInterval(timer); timer = null }
+    isPolling.value = false
+  }
+
+  onUnmounted(stop)
+  return { isPolling, start, stop }
+}
+```
+
+#### 8.7.6 获取知识库分类树
+
+```
+GET /api/v1/knowledge/categories
+```
+
+**响应示例**:
+```json
+{
+  "code": 200,
+  "data": [
+    {
+      "id": 1, "name": "产品知识",
+      "children": [
+        { "id": 11, "name": "紫砂壶" },
+        { "id": 12, "name": "茶杯" },
+        { "id": 13, "name": "茶盘" }
+      ]
+    },
+    { "id": 2, "name": "售后政策" },
+    { "id": 3, "name": "物流FAQ" },
+    { "id": 4, "name": "操作流程" }
+  ]
+}
+```
+
+**前端渲染: Element Plus Tree组件**:
+```vue
+<el-tree
+  :data="categoryTree"
+  :props="{ children: 'children', label: 'name' }"
+  node-key="id"
+  highlight-current
+  @node-click="handleCategoryClick"
+/>
+```
+
+#### 8.7.7 手动录入知识
+
+```
+POST /api/v1/knowledge/manual
+```
+
+**请求示例**:
+```json
+{
+  "title": "紫砂壶开壶方法",
+  "content": "新买的紫砂壶需要先进行开壶处理...",
+  "category": "product",
+  "tags": ["紫砂壶", "开壶", "保养"]
+}
+```
+
+**响应示例**:
+```json
+{
+  "code": 200,
+  "data": {
+    "docId": "doc-002",
+    "chunkCount": 3
+  }
+}
+```
+
+#### 8.7.8 更新知识条目
+
+```
+PUT /api/v1/knowledge/{docId}
+```
+
+**请求示例**:
+```json
+{
+  "title": "紫砂壶开壶方法(修订版)",
+  "content": "新买的紫砂壶需要先进行开壶处理...（修订内容）",
+  "category": "product",
+  "tags": ["紫砂壶", "开壶", "保养", "新手必读"]
+}
+```
+
+#### 8.7.9 搜索知识库
+
+```
+GET /api/v1/knowledge/search?keyword=紫砂壶&category=product&page=1&pageSize=10
+```
+
+**响应示例**:
+```json
+{
+  "code": 200,
+  "data": {
+    "records": [
+      {
+        "docId": "doc-001",
+        "title": "紫砂壶保养指南",
+        "highlightTitle": "<em>紫砂壶</em>保养指南",
+        "chunkContent": "日常使用<em>紫砂壶</em>时需要注意...",
+        "score": 9.5,
+        "category": "product",
+        "status": "active"
+      }
+    ],
+    "total": 8
+  }
+}
+```
+
+---
+
+### 8.8 钉钉集成接口
+
+#### 8.8.1 获取钉钉授权状态
+
+```
+GET /api/v1/dingtalk/auth/status
+```
+
+**响应示例**:
+```json
+{
+  "code": 200,
+  "data": {
+    "connected": true,
+    "orgName": "XX茶具有限公司",
+    "lastSyncTime": "2026-05-30 08:00:00"
+  }
+}
+```
+
+#### 8.8.2 触发全量同步
+
+```
+POST /api/v1/dingtalk/sync/full
+```
+
+**响应示例**:
+```json
+{
+  "code": 200,
+  "data": {
+    "taskId": "sync-20260601-001",
+    "status": "running",
+    "totalFiles": 45
+  }
+}
+```
+
+#### 8.8.3 获取同步进度
+
+```
+GET /api/v1/dingtalk/sync/progress?taskId=sync-20260601-001
+```
+
+**响应示例**:
+```json
+{
+  "code": 200,
+  "data": {
+    "taskId": "sync-20260601-001",
+    "status": "syncing",
+    "totalFiles": 45,
+    "completedFiles": 32,
+    "progress": 71,
+    "currentFile": "产品手册-2026Q2.docx"
+  }
+}
+```
+
+#### 8.8.4 手动同步指定文件
+
+```
+POST /api/v1/dingtalk/sync/files
+```
+
+**请求示例**:
+```json
+{
+  "fileIds": ["ding_file_001", "ding_file_002"]
+}
+```
+
+---
+
+### 8.9 数据分析接口
+
+#### 8.9.1 获取仪表盘数据
+
+```
+GET /api/v1/analytics/dashboard
+```
+
+**响应示例**:
+```json
+{
+  "code": 200,
+  "data": {
+    "todayStats": {
+      "totalSessions": 156,
+      "aiHandledRate": 82.5,
+      "avgResponseTime": 2.8,
+      "pendingTickets": 5,
+      "satisfactionRate": 94.2
+    },
+    "sessionTrend": [
+      { "date": "05-26", "count": 120 },
+      { "date": "05-27", "count": 145 },
+      { "date": "05-28", "count": 132 },
+      { "date": "05-29", "count": 158 },
+      { "date": "05-30", "count": 140 },
+      { "date": "05-31", "count": 148 },
+      { "date": "06-01", "count": 156 }
+    ],
+    "platformDistribution": [
+      { "platform": "tmall", "count": 68, "percentage": 43.6 },
+      { "platform": "jd", "count": 35, "percentage": 22.4 },
+      { "platform": "douyin", "count": 30, "percentage": 19.2 },
+      { "platform": "pdd", "count": 23, "percentage": 14.7 }
+    ],
+    "hotTopics": [
+      { "topic": "物流查询", "count": 45 },
+      { "topic": "退换货流程", "count": 32 },
+      { "topic": "产品咨询", "count": 28 },
+      { "topic": "优惠活动", "count": 18 },
+      { "topic": "使用保养", "count": 15 }
+    ],
+    "intentDistribution": [
+      { "intent": "order_query", "label": "订单查询", "count": 52, "percentage": 33.3 },
+      { "intent": "product_inquiry", "label": "产品咨询", "count": 38, "percentage": 24.4 },
+      { "intent": "after_sales", "label": "售后问题", "count": 28, "percentage": 17.9 },
+      { "intent": "complaint", "label": "客诉", "count": 15, "percentage": 9.6 },
+      { "intent": "other", "label": "其他", "count": 23, "percentage": 14.7 }
+    ]
+  }
+}
+```
+
+**前端ECharts渲染**:
+```typescript
+// DashboardView.vue
+function renderSessionTrend(data: TrendItem[]) {
+  const chart = echarts.init(document.getElementById('trend-chart')!)
+  chart.setOption({
+    xAxis: { type: 'category', data: data.map(d => d.date) },
+    yAxis: { type: 'value' },
+    series: [{
+      type: 'line',
+      data: data.map(d => d.count),
+      smooth: true,
+      areaStyle: { opacity: 0.3 }
+    }],
+    tooltip: { trigger: 'axis' }
+  })
+}
+
+function renderPlatformPie(data: PlatformItem[]) {
+  const chart = echarts.init(document.getElementById('platform-chart')!)
+  chart.setOption({
+    series: [{
+      type: 'pie',
+      radius: ['40%', '70%'],
+      data: data.map(d => ({ name: platformLabel(d.platform), value: d.count })),
+      label: { formatter: '{b}: {d}%' }
+    }],
+    tooltip: { trigger: 'item' }
+  })
+}
+```
+
+#### 8.9.2 获取趋势数据
+
+```
+GET /api/v1/analytics/trend?startDate=2026-05-01&endDate=2026-06-01&granularity=day
+```
+
+| 参数 | 类型 | 说明 |
+|------|------|------|
+| startDate | string | 开始日期 YYYY-MM-DD |
+| endDate | string | 结束日期 YYYY-MM-DD |
+| granularity | string | day/hour，默认day |
+
+#### 8.9.3 获取热点问题
+
+```
+GET /api/v1/analytics/hot-topics?startDate=2026-05-25&endDate=2026-06-01&limit=20
+```
+
+#### 8.9.4 生成周报/月报
+
+```
+POST /api/v1/analytics/report
+```
+
+**请求示例**:
+```json
+{
+  "type": "weekly",
+  "startDate": "2026-05-25",
+  "endDate": "2026-05-31"
+}
+```
+
+**响应示例**:
+```json
+{
+  "code": 200,
+  "data": {
+    "reportId": "rpt-2026-w22",
+    "type": "weekly",
+    "content": "# 客服运营周报 (2026.5.25 - 2026.5.31)\n\n## 一、核心指标\n- 总会话量: 986\n- AI处理率: 83.2%\n- 平均响应时间: 2.6s\n- 客户满意度: 94.8%\n\n## 二、热点问题TOP5\n...",
+    "markdownContent": "...",
+    "createTime": "2026-06-01 08:00:00"
+  }
+}
+```
+
+**前端Markdown报表渲染**:
+```vue
+<MarkdownViewer :content="report.markdownContent" />
+```
+
+---
+
+### 8.10 系统管理接口
+
+#### 8.10.1 获取系统配置
+
+```
+GET /api/v1/system/config
+```
+
+#### 8.10.2 更新系统配置
+
+```
+PUT /api/v1/system/config
+```
+
+**请求示例**:
+```json
+{
+  "aiModel": "deepseek-v3",
+  "autoCloseHours": 24,
+  "maxRetryCount": 3,
+  "nightModeStart": "22:00",
+  "nightModeEnd": "08:00",
+  "autoWelcomeEnabled": true
+}
+```
+
+#### 8.10.3 获取Prompt模板列表
+
+```
+GET /api/v1/system/prompts?page=1&pageSize=20
+```
+
+**响应示例**:
+```json
+{
+  "code": 200,
+  "data": {
+    "records": [
+      {
+        "id": 1,
+        "name": "客服对话Prompt",
+        "type": "chat",
+        "version": "v1.2",
+        "content": "你是一位专业的茶具电商客服...",
+        "status": "active",
+        "updateTime": "2026-05-28 14:00:00"
+      },
+      {
+        "id": 2,
+        "name": "客诉分析Prompt",
+        "type": "complaint",
+        "version": "v1.0",
+        "content": "请分析以下客服对话中的客诉问题...",
+        "status": "active",
+        "updateTime": "2026-05-20 10:00:00"
+      }
+    ],
+    "total": 5
+  }
+}
+```
+
+#### 8.10.4 创建/编辑Prompt模板
+
+```
+POST /api/v1/system/prompts        # 创建
+PUT /api/v1/system/prompts/{id}     # 编辑
+```
+
+#### 8.10.5 获取操作日志
+
+```
+GET /api/v1/system/logs?type=&operator=&startTime=&endTime=&page=1&pageSize=20
+```
+
+| 参数 | 类型 | 说明 |
+|------|------|------|
+| type | string | chat/ticket/knowledge/system |
+| operator | string | 操作人用户名 |
+| startTime | string | 开始时间 |
+| endTime | string | 结束时间 |
+
+---
+
+### 8.11 前端API层完整代码模板 (api/chat.ts)
+
+```typescript
+import request from './request'
+import type { ApiResponse, PageResponse } from '@/types/api'
+import type {
+  ChatRequest,
+  ChatResponse,
+  Session,
+  SessionQuery,
+  Message,
+  QuickReply,
+  FeedbackRequest
+} from '@/types/chat'
+
+const BASE = '/chat'
+
+/**
+ * 发送消息（普通模式）
+ * @description 适用于不需要流式展示的场景
+ */
+export function sendMessage(data: ChatRequest): Promise<ApiResponse<ChatResponse>> {
+  return request.post(`${BASE}/send`, data)
+}
+
+/**
+ * 获取SSE流式地址（用于fetch直接调用）
+ * @description 前端使用 useSSE() composable 消费
+ */
+export function getStreamUrl(): string {
+  return `${import.meta.env.VITE_API_BASE_URL}${BASE}/stream`
+}
+
+/**
+ * 评价消息
+ */
+export function submitFeedback(messageId: string, data: FeedbackRequest): Promise<ApiResponse<null>> {
+  return request.post(`${BASE}/${messageId}/feedback`, data)
+}
+
+/**
+ * 获取快捷回复
+ */
+export function getQuickReplies(platform?: string): Promise<ApiResponse<QuickReply[]>> {
+  return request.get(`${BASE}/quick-replies`, { params: { platform } })
 }
 ```
 
@@ -1365,6 +3766,7 @@ services:
       - ./nginx/nginx.conf:/etc/nginx/nginx.conf
       - ./nginx/conf.d:/etc/nginx/conf.d
       - ./nginx/ssl:/etc/nginx/ssl
+      - ./web/dist:/usr/share/nginx/html  # 前端静态资源挂载
     depends_on:
       - chatbot-app
     networks:
@@ -1513,10 +3915,14 @@ http {
 
 ### 10.7 Nginx 站点配置 (chatbot.conf)
 
+> **前端开发注意**: Nginx 同时负责前端静态资源托管和 API 反向代理，前端路由使用 HTML5 History 模式，Nginx 需配置 `try_files` 回退到 `index.html`。
+
 ```nginx
 upstream chatbot_backend {
     least_conn;
     server chatbot-app:8080 weight=1 max_fails=3 fail_timeout=30s;
+    # 如需多实例扩容，添加更多 server 行
+    # server chatbot-app-2:8080 weight=1 max_fails=3 fail_timeout=30s;
 }
 
 server {
@@ -1536,13 +3942,36 @@ server {
 
     client_max_body_size 50m;
 
-    # 管理后台
-    location /admin/ {
-        alias /usr/share/nginx/html/admin/;
-        try_files $uri $uri/ /admin/index.html;
+    # ======== 前端 SPA 路由 (History Mode) ========
+
+    # 管理后台 (/admin/*)
+    location /admin {
+        alias /usr/share/nginx/html;
+        try_files $uri $uri/ /index.html;
     }
 
-    # API 代理
+    # 客服工作台 (/agent/*)
+    location /agent {
+        alias /usr/share/nginx/html;
+        try_files $uri $uri/ /index.html;
+    }
+
+    # 登录页
+    location /login {
+        alias /usr/share/nginx/html;
+        try_files $uri $uri/ /index.html;
+    }
+
+    # 前端静态资源 (JS/CSS/图片等带hash的文件)
+    location /assets/ {
+        alias /usr/share/nginx/html/assets/;
+        expires 30d;
+        add_header Cache-Control "public, immutable";
+    }
+
+    # ======== API 代理 ========
+
+    # REST API 代理
     location /api/ {
         proxy_pass http://chatbot_backend;
         proxy_set_header Host $host;
@@ -1555,7 +3984,7 @@ server {
         proxy_send_timeout 30s;
     }
 
-    # SSE (Server-Sent Events) 流式对话
+    # SSE (Server-Sent Events) 流式对话 - 特殊配置
     location /api/v1/chat/stream {
         proxy_pass http://chatbot_backend;
         proxy_set_header Host $host;
@@ -1586,7 +4015,53 @@ server {
         proxy_pass http://chatbot_backend/actuator/health;
         access_log off;
     }
+
+    # ======== 默认回退到前端SPA ========
+    location / {
+        root /usr/share/nginx/html;
+        try_files $uri $uri/ /index.html;
+    }
 }
+```
+
+**前端History模式注意事项**:
+1. Vue Router 使用 `createWebHistory()` (非 Hash 模式)
+2. Nginx 必须配置 `try_files` 将所有路由回退到 `index.html`
+3. 前端部署后需确保 `/admin/*` 和 `/agent/*` 路由均可直接访问（刷新不404）
+4. 静态资源路径 `/assets/` 使用长缓存策略（文件名带hash）
+
+#### 10.7.1 前端构建产物部署目录结构
+
+```
+/opt/order-chatbot/web/dist/        # 前端构建产物挂载到此目录
+├── index.html                       # SPA入口
+├── assets/                          # 静态资源 (JS/CSS/图片)
+│   ├── vue-abc123.js
+│   ├── element-def456.js
+│   ├── echarts-ghi789.js
+│   ├── vendor-jkl012.js
+│   ├── index-mno345.js
+│   └── index-pqr678.css
+└── favicon.ico
+```
+
+#### 10.7.2 前端部署命令 (运维执行)
+
+```bash
+# 1. 进入前端项目目录
+cd /path/to/order-chatbot-web
+
+# 2. 安装依赖
+npm install
+
+# 3. 构建生产版本
+npm run build
+
+# 4. 将构建产物复制到服务器Nginx挂载目录
+scp -r dist/* root@your-server:/opt/order-chatbot/web/dist/
+
+# 5. 重载Nginx
+ssh root@your-server "docker exec chatbot-nginx nginx -s reload"
 ```
 
 ### 10.8 MySQL 配置 (my.cnf)
