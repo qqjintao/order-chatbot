@@ -1,0 +1,53 @@
+spring:
+  application:
+    name: chatbot-test
+  ai:
+    dashscope:
+      api-key: ${DASHSCOPE_API_KEY:test-key}
+      chat:
+        options:
+          model: qwen3.6-flash-2026-04-16
+
+  datasource:
+    url: jdbc:h2:mem:testdb;MODE=MySQL;DB_CLOSE_DELAY=-1;DB_CLOSE_ON_EXIT=FALSE
+    username: sa
+    password:
+    driver-class-name: org.h2.Driver
+    sql:
+      init:
+        mode: always
+        schema-locations: classpath:test-schema.sql
+
+  sql:
+    init:
+      mode: always
+
+  main:
+    allow-bean-definition-overriding: true
+
+mybatis-plus:
+  type-aliases-package: com.chatbot.dao.entity
+  configuration:
+    map-underscore-to-camel-case: true
+  global-config:
+    db-config:
+      id-type: auto
+
+server:
+  port: 0
+
+springdoc:
+  api-docs:
+    path: /v3/api-docs
+  swagger-ui:
+    path: /swagger-ui.html
+
+jwt:
+  secret: Y2hhdGJvdC1zZWNyZXQta2V5LWZvci1qd3QtdG9rZW4tZ2VuZXJhdGlvbi0yMDI2
+  expiration: 7200
+
+logging:
+  level:
+    com.chatbot: DEBUG
+    org.springframework.security: WARN
+    org.springframework.boot.test: WARN

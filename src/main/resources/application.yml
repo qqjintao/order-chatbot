@@ -1,30 +1,18 @@
+
 spring:
   application:
     name: chatbot
   ai:
     dashscope:
-      api-key: 3cf4eb42-3301-4621-ae2b-58d1510cb057
+      api-key: ${DASHSCOPE_API_KEY:sk-dummy-key-for-startup}
       chat:
         options:
           model: qwen3.6-flash-2026-04-16
-    mcp:
-      client:
-        enabled: true
-        toolcallback:
-          enabled: true
-        streamable-http:
-          connections:
-            jina:
-              # 官方地址：https://mcp.jina.ai 本地部署：http://127.0.0.1:8787
-              url: "https://mcp.jina.ai"
-              endpoint: "/sse"
-        request-timeout: 60000
 
-  # MySQL DataSource
   datasource:
-    url: jdbc:mysql://localhost:3306/order_chatbot?useUnicode=true&characterEncoding=utf-8&serverTimezone=Asia/Shanghai&createDatabaseIfNotExist=true
-    username: root
-    password: root
+    url: jdbc:mysql://localhost:3306/chat_bot?useUnicode=true&characterEncoding=utf-8&serverTimezone=Asia/Shanghai&createDatabaseIfNotExist=true
+    username: ${MYSQL_USER:root}
+    password: ${MYSQL_PASSWORD:root}
     driver-class-name: com.mysql.cj.jdbc.Driver
     hikari:
       minimum-idle: 5
@@ -33,21 +21,34 @@ spring:
       max-lifetime: 1200000
       connection-timeout: 30000
 
-  # MyBatis-Plus
+  data:
+    redis:
+      host: ${REDIS_HOST:localhost}
+      port: ${REDIS_PORT:6379}
+      timeout: 5000ms
+      lettuce:
+        pool:
+          max-active: 16
+          max-idle: 8
+          min-idle: 4
+
+  servlet:
+    multipart:
+      enabled: true
+      max-file-size: 50MB
+      max-request-size: 50MB
+
 mybatis-plus:
-  mapper-locations: classpath:mapper/*.xml
-  type-aliases-package: com.ai.examples.chatbot.dao.entity
+  type-aliases-package: com.chatbot.dao.entity
   configuration:
-    log-impl: org.apache.ibatis.logging.stdout.StdOutImpl
     map-underscore-to-camel-case: true
   global-config:
     db-config:
       id-type: auto
 
 server:
-  port: 8080
+  port: ${SERVER_PORT:8080}
 
-# SpringDoc OpenAPI (Swagger)
 springdoc:
   api-docs:
     path: /v3/api-docs
@@ -55,7 +56,25 @@ springdoc:
     path: /swagger-ui.html
     tags-sorter: alpha
     operations-sorter: alpha
-  group-configs:
-    - group: chatbot
-      paths-to-match: /api/**
-      packages-to-scan: com.ai.examples.chatbot.controller
+
+# JWT
+jwt:
+  secret: Y2hhdGJvdC1zZWNyZXQta2V5LWZvci1qd3QtdG9rZW4tZ2VuZXJhdGlvbi0yMDI2
+  expiration: 7200
+
+logging:
+  level:
+    com.chatbot: DEBUG
+    org.springframework.security: WARN
+
+# RAG配置
+chatbot:
+  rag:
+    enabled: true
+    top-k: 5
+    chunk-size: 1000
+    chunk-overlap: 100
+  knowledge:
+    upload-path: ./uploads/knowledge
+  ai:
+    mock-enabled: true
